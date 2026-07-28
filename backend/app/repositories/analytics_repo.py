@@ -61,31 +61,43 @@ class AnalyticsRepository:
 
     def daily_clicks(self, user_id: str, days: int = 30) -> List[dict]:
         since = datetime.now(timezone.utc) - timedelta(days=days)
+        dialect = self.db.bind.dialect.name
+        if dialect == "postgresql":
+            date_expr = func.to_char(Analytics.clicked_at, "YYYY-MM-DD")
+        else:
+            date_expr = func.strftime("%Y-%m-%d", Analytics.clicked_at)
+
         rows = (
             self.db.query(
-                func.date(Analytics.clicked_at).label("date"),
+                date_expr.label("date"),
                 func.count(Analytics.id).label("clicks"),
             )
             .filter(Analytics.user_id == user_id, Analytics.clicked_at >= since)
-            .group_by(func.date(Analytics.clicked_at))
-            .order_by(func.date(Analytics.clicked_at))
+            .group_by(date_expr)
+            .order_by(date_expr)
             .all()
         )
         return [{"date": str(r.date), "clicks": r.clicks} for r in rows]
 
     def monthly_clicks(self, user_id: str, months: int = 12) -> List[dict]:
         since = datetime.now(timezone.utc) - timedelta(days=months * 30)
+        dialect = self.db.bind.dialect.name
+        if dialect == "postgresql":
+            month_expr = func.to_char(Analytics.clicked_at, "YYYY-MM")
+        else:
+            month_expr = func.strftime("%Y-%m", Analytics.clicked_at)
+
         rows = (
             self.db.query(
-                func.strftime("%Y-%m", Analytics.clicked_at).label("month"),
+                month_expr.label("month"),
                 func.count(Analytics.id).label("clicks"),
             )
             .filter(Analytics.user_id == user_id, Analytics.clicked_at >= since)
-            .group_by(func.strftime("%Y-%m", Analytics.clicked_at))
-            .order_by(func.strftime("%Y-%m", Analytics.clicked_at))
+            .group_by(month_expr)
+            .order_by(month_expr)
             .all()
         )
-        return [{"date": r.month, "clicks": r.clicks} for r in rows]
+        return [{"date": str(r.month), "clicks": r.clicks} for r in rows]
 
     def distribution(self, user_id: str, field: str) -> List[dict]:
         col = getattr(Analytics, field, None)
