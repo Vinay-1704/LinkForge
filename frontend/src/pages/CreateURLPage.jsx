@@ -77,11 +77,11 @@ export default function CreateURLPage() {
     <div className="max-w-2xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h2 className="text-2xl font-black mb-1" style={{ color: 'hsl(var(--foreground))' }}>Create Short URL</h2>
-        <p className="text-sm mb-8" style={{ color: 'hsl(var(--muted-foreground))' }}>
+        <p className="text-sm mb-6" style={{ color: 'hsl(var(--muted-foreground))' }}>
           Fill in the details to generate your shortened link.
         </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="glass rounded-2xl p-6 space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="glass rounded-2xl p-4 sm:p-6 space-y-5">
           {/* Original URL */}
           <InputWrapper label="Original URL *" icon={Link2} error={errors.original_url?.message}>
             <input
@@ -99,7 +99,7 @@ export default function CreateURLPage() {
           {/* Custom Alias */}
           <InputWrapper label="Custom Alias (optional)" icon={Link2} error={errors.custom_alias?.message}>
             <div className="flex items-center">
-              <span className="absolute left-3 text-xs font-mono z-10" style={{ color: 'hsl(var(--muted-foreground))', top: '50%', transform: 'translateY(-50%)', left: '12px' }}>lf/</span>
+              <span className="absolute left-3 text-xs font-mono z-10" style={{ color: 'hsl(var(--muted-foreground))', top: '50%', transform: 'translateY(-50%)' }}>lf/</span>
               <input
                 {...register('custom_alias', {
                   minLength: { value: 3, message: 'Min 3 characters' },
@@ -171,7 +171,7 @@ export default function CreateURLPage() {
           </div>
 
           {/* Expiration + Password row */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <InputWrapper label="Expiration (optional)" icon={Clock}>
               <input
                 {...register('expires_at')}
@@ -192,7 +192,7 @@ export default function CreateURLPage() {
           </div>
 
           {/* Submit */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <button
               type="submit"
               disabled={mutation.isPending}
