@@ -3,15 +3,20 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
-# Handle SQLite for dev (check_same_thread only needed for SQLite)
-connect_args = {}
+# Configure engine kwargs for PostgreSQL (with connection pooling) vs SQLite fallback
+engine_kwargs = {"echo": settings.DEBUG}
+
 if settings.DATABASE_URL.startswith("sqlite"):
-    connect_args = {"check_same_thread": False}
+    engine_kwargs["connect_args"] = {"check_same_thread": False}
+else:
+    # PostgreSQL connection pooling & connection health check
+    engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_size"] = 10
+    engine_kwargs["max_overflow"] = 20
 
 engine = create_engine(
     settings.DATABASE_URL,
-    connect_args=connect_args,
-    echo=settings.DEBUG,
+    **engine_kwargs,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -29,5 +34,5 @@ def get_db():
 
 
 def create_tables():
-    """Create all database tables (used in development)."""
+    """Create all database tables in PostgreSQL."""
     Base.metadata.create_all(bind=engine)
