@@ -20,10 +20,10 @@ class Settings(BaseSettings):
 
     # Short Code
     SHORT_CODE_LENGTH: int = 6
-    BASE_URL: str = "http://localhost:8000"
+    BASE_URL: str = "https://linkforge-miwa.onrender.com"
 
     # CORS
-    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,https://link-forge-eight.vercel.app"
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,https://link-forge-eight.vercel.app,https://linkforge-miwa.onrender.com"
 
     # Upload
     UPLOAD_DIR: str = "uploads"
