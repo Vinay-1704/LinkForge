@@ -5,6 +5,7 @@ import { Star, Copy, ExternalLink, Trash2, Link2, QrCode } from 'lucide-react'
 import { formatNumber, formatDate, truncate, copyToClipboard } from '@/utils/helpers'
 import { useToast } from '@/context/ToastContext'
 import { Link } from 'react-router-dom'
+import { API_BASE_URL } from '@/utils/constants'
 
 export default function FavoritesPage() {
   const { toast } = useToast()
@@ -29,11 +30,19 @@ export default function FavoritesPage() {
 
   const handleDownloadQr = async (url) => {
     try {
-      const blob = await urlService.getQrPng(url.id)
+      const baseUrl = url.qr_code_url || `${API_BASE_URL.replace(/\/$/, '')}/urls/${url.id}/qr`
+      const downloadUrl = baseUrl.includes('?') ? `${baseUrl}&download=true` : `${baseUrl}?download=true`
+      const response = await fetch(downloadUrl)
+      if (!response.ok) throw new Error('Failed to fetch QR')
+      const blob = await response.blob()
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
-      link.download = `qr-${url.short_code}.png`
+      link.download = `qr-${url.custom_alias || url.short_code}.png`
+      document.body.appendChild(link)
       link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(link.href)
+      toast.success('QR downloaded!')
     } catch {
       toast.error('Failed to download QR')
     }

@@ -29,11 +29,27 @@ def generate_qr_png(short_url: str, url_id: str) -> str:
     qr.add_data(short_url)
     qr.make(fit=True)
 
-    # make_image returns a PilImage — save directly without .convert()
     img = qr.make_image(fill_color="black", back_color="white")
     img.save(filepath)
 
     return filepath
+
+
+def generate_qr_png_bytes(short_url: str) -> bytes:
+    """Generate a PNG QR code in memory and return as bytes."""
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(short_url)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 def generate_qr_svg(short_url: str) -> bytes:

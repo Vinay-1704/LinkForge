@@ -10,6 +10,7 @@ import {
 import { urlService } from '@/services/url.service'
 import { useToast } from '@/context/ToastContext'
 import { formatDate, formatNumber, truncate, copyToClipboard, isExpired } from '@/utils/helpers'
+import { API_BASE_URL } from '@/utils/constants'
 
 function StatusBadge({ url }) {
   if (!url.is_active) return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-500/20 text-gray-400">Inactive</span>
@@ -17,14 +18,11 @@ function StatusBadge({ url }) {
   return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">Active</span>
 }
 
-/** QR Code Modal — shows the QR image from the static backend URL */
+/** QR Code Modal — shows the QR image from backend */
 function QrModal({ url, onClose }) {
   const { toast } = useToast()
 
-  // Strip the backend origin so request goes through Vite's /static proxy (avoids CORS)
-  const qrSrc = url.qr_code_url
-    ? url.qr_code_url.replace(/^https?:\/\/[^/]+/, '')
-    : null
+  const qrSrc = url.qr_code_url || `${API_BASE_URL.rstrip('/')}/urls/${url.id}/qr`
 
   const handleDownload = async () => {
     if (!qrSrc) {
@@ -32,12 +30,13 @@ function QrModal({ url, onClose }) {
       return
     }
     try {
-      const response = await fetch(qrSrc)
+      const downloadUrl = qrSrc.includes('?') ? `${qrSrc}&download=true` : `${qrSrc}?download=true`
+      const response = await fetch(downloadUrl)
       if (!response.ok) throw new Error('Failed to fetch QR')
       const blob = await response.blob()
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
-      link.download = `qr-${url.short_code}.png`
+      link.download = `qr-${url.custom_alias || url.short_code}.png`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -112,7 +111,7 @@ export default function MyURLsPage() {
   const [sortDir, setSortDir] = useState('desc')
   const [filterActive, setFilterActive] = useState(null)
   const [filterFav, setFilterFav] = useState(null)
-  const [qrModal, setQrModal] = useState(null)  // holds url object
+  const [qrModal, setQrModal] = useState(null)
   const [selected, setSelected] = useState([])
 
   const { data, isLoading } = useQuery({
@@ -256,25 +255,18 @@ export default function MyURLsPage() {
                   className="w-4 h-4 accent-indigo-500 rounded shrink-0" />
 
                 {/* QR Thumbnail */}
-                {url.qr_code_url ? (
-                  <button
-                    onClick={() => setQrModal(url)}
-                    title="View QR Code"
-                    className="shrink-0 w-10 h-10 rounded-lg overflow-hidden border hover:opacity-80 transition-opacity"
-                    style={{ borderColor: 'hsl(var(--border))' }}
-                  >
-                    <img
-                      src={url.qr_code_url.replace(/^https?:\/\/[^/]+/, '')}
-                      alt="QR"
-                      className="w-full h-full object-cover bg-white"
-                    />
-                  </button>
-                ) : (
-                  <div className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
-                    style={{ background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' }}>
-                    <QrCode className="w-5 h-5" />
-                  </div>
-                )}
+                <button
+                  onClick={() => setQrModal(url)}
+                  title="View QR Code"
+                  className="shrink-0 w-10 h-10 rounded-lg overflow-hidden border hover:opacity-80 transition-opacity"
+                  style={{ borderColor: 'hsl(var(--border))' }}
+                >
+                  <img
+                    src={url.qr_code_url || `${API_BASE_URL.replace(/\/$/, '')}/urls/${url.id}/qr`}
+                    alt="QR"
+                    className="w-full h-full object-cover bg-white"
+                  />
+                </button>
 
                 {/* URL Info */}
                 <div className="flex-1 min-w-0">

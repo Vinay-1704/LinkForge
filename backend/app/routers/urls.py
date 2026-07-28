@@ -1,22 +1,21 @@
-from fastapi import APIRouter, Depends, Query, Request, Response, HTTPException
-from fastapi.responses import FileResponse, StreamingResponse, RedirectResponse
+import os
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Response
 from sqlalchemy.orm import Session
 from typing import Optional
-import io
 
 from app.database.base import get_db
+from app.schemas.url import URLCreate, URLUpdate, URLResponse, URLListResponse
 from app.services.url_service import URLService
-from app.services.analytics_service import AnalyticsService
-from app.services.qr_service import generate_qr_svg, get_qr_png_bytes
-from app.schemas.url import URLCreate, URLUpdate, URLResponse, URLListResponse, URLPasswordVerify
-from app.schemas.common import SuccessResponse
 from app.auth.dependencies import get_current_user
 from app.models.user import User
+from app.services.qr_service import (
+    generate_qr_png, generate_qr_png_bytes, generate_qr_svg, get_qr_png_bytes
+)
 
 router = APIRouter(prefix="/urls", tags=["URLs"])
 
 
-@router.post("", response_model=URLResponse, status_code=201)
+@router.post("", response_model=URLResponse, status_code=status.HTTP_201_CREATED)
 def create_url(
     data: URLCreate,
     db: Session = Depends(get_db),
@@ -31,15 +30,15 @@ def create_url(
 def list_urls(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    search: Optional[str] = None,
-    is_active: Optional[bool] = None,
-    is_favorite: Optional[bool] = None,
-    sort_by: str = Query("created_at", pattern="^(created_at|click_count|original_url)$"),
-    sort_dir: str = Query("desc", pattern="^(asc|desc)$"),
+    search: Optional[str] = Query(None),
+    is_active: Optional[bool] = Query(None),
+    is_favorite: Optional[bool] = Query(None),
+    sort_by: str = Query("created_at"),
+    sort_dir: str = Query("desc"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List URLs for the current user with search, filter, sort, and pagination."""
+    """List shortened URLs for the current user with pagination and filtering."""
     service = URLService(db)
     return service.get_user_urls(
         current_user, page, page_size, search, is_active, is_favorite, sort_by, sort_dir
@@ -52,7 +51,7 @@ def get_url(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Get a single URL by ID."""
+    """Get details of a specific URL by ID."""
     service = URLService(db)
     return service.get_url(url_id, current_user)
 
@@ -64,21 +63,20 @@ def update_url(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Update a URL's properties."""
+    """Update an existing URL."""
     service = URLService(db)
     return service.update_url(url_id, data, current_user)
 
 
-@router.delete("/{url_id}", response_model=SuccessResponse)
+@router.delete("/{url_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_url(
     url_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Delete a URL and all its analytics."""
+    """Delete a URL."""
     service = URLService(db)
     service.delete_url(url_id, current_user)
-    return SuccessResponse(message="URL deleted successfully")
 
 
 @router.post("/{url_id}/favorite", response_model=URLResponse)
@@ -95,22 +93,42 @@ def toggle_favorite(
 @router.get("/{url_id}/qr")
 def get_qr_png(
     url_id: str,
+    download: bool = Query(False),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    """Download the QR code PNG for a URL (authenticated)."""
+    """
+    Public PNG QR code endpoint.
+    Serves existing QR image file or dynamically generates PNG on-the-fly.
+    Works natively inside browser <img> tags and direct downloads.
+    """
     from app.repositories.url_repo import URLRepository
+    from app.core.config import settings
+
     repo = URLRepository(db)
     url = repo.get_by_id(url_id)
-    if not url or url.user_id != current_user.id:
+    if not url:
         raise HTTPException(status_code=404, detail="URL not found")
-    if not url.qr_code_path:
-        raise HTTPException(status_code=404, detail="QR code not found")
-    data = get_qr_png_bytes(url.qr_code_path)
+
+    if url.qr_code_path and os.path.exists(url.qr_code_path):
+        try:
+            data = get_qr_png_bytes(url.qr_code_path)
+        except Exception:
+            base_url = settings.BASE_URL.rstrip("/")
+            short_url = f"{base_url}/r/{url.effective_code}"
+            data = generate_qr_png_bytes(short_url)
+    else:
+        base_url = settings.BASE_URL.rstrip("/")
+        short_url = f"{base_url}/r/{url.effective_code}"
+        data = generate_qr_png_bytes(short_url)
+
+    headers = {}
+    if download:
+        headers["Content-Disposition"] = f"attachment; filename=qr-{url.effective_code}.png"
+
     return Response(
         content=data,
         media_type="image/png",
-        headers={"Content-Disposition": f"attachment; filename=qr-{url.short_code}.png"},
+        headers=headers,
     )
 
 
@@ -118,13 +136,18 @@ def get_qr_png(
 def get_qr_svg(
     url_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
-    """Download the QR code SVG for a URL."""
+    """Public SVG QR code endpoint."""
+    from app.repositories.url_repo import URLRepository
     from app.core.config import settings
-    service = URLService(db)
-    url = service.get_url(url_id, current_user)
-    short_url = f"{settings.BASE_URL}/{url.short_code}"
+
+    repo = URLRepository(db)
+    url = repo.get_by_id(url_id)
+    if not url:
+        raise HTTPException(status_code=404, detail="URL not found")
+
+    base_url = settings.BASE_URL.rstrip("/")
+    short_url = f"{base_url}/r/{url.effective_code}"
     svg_bytes = generate_qr_svg(short_url)
     return Response(content=svg_bytes, media_type="image/svg+xml")
 

@@ -134,9 +134,7 @@ class URLService:
         """Convert ORM URL object to a validated URLResponse Pydantic model."""
         effective_code = url.effective_code
         short_url = f"{self.base_url}/r/{effective_code}"
-        qr_code_url = (
-            f"{self.base_url}/static/qr/qr_{url.id}.png" if url.qr_code_path else None
-        )
+        qr_code_url = f"{self.base_url}/urls/{url.id}/qr"
         return URLResponse(
             id=url.id,
             user_id=url.user_id,

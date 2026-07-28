@@ -32,7 +32,7 @@ def _url_to_response(url, base_url: str) -> URLResponse:
         is_active=url.is_active,
         is_favorite=url.is_favorite,
         is_expired=url.is_expired,
-        qr_code_url=f"{base}/static/qr/qr_{url.id}.png" if url.qr_code_path else None,
+        qr_code_url=f"{base}/urls/{url.id}/qr",
         created_at=url.created_at,
         updated_at=url.updated_at,
     )
