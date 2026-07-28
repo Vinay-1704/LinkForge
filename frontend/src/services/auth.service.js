@@ -1,0 +1,14 @@
+import api from './api'
+
+export const authService = {
+  register: (data) => api.post('/auth/register', data).then(r => r.data),
+  login: (data) => api.post('/auth/login', data).then(r => r.data),
+  logout: (refreshToken) => api.post('/auth/logout', { refresh_token: refreshToken }),
+  refresh: (refreshToken) => api.post('/auth/refresh', { refresh_token: refreshToken }).then(r => r.data),
+  getMe: () => api.get('/auth/me').then(r => r.data),
+  updateProfile: (data) => api.put('/auth/profile', data).then(r => r.data),
+  changePassword: (data) => api.put('/auth/change-password', data).then(r => r.data),
+  deleteAccount: () => api.delete('/auth/account').then(r => r.data),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }).then(r => r.data),
+  resetPassword: (data) => api.post('/auth/reset-password', data).then(r => r.data),
+}
