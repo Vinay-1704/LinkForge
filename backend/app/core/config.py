@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     BASE_URL: str = "http://localhost:8000"
 
     # CORS
-    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://localhost:3000,https://link-forge-eight.vercel.app"
 
     # Upload
     UPLOAD_DIR: str = "uploads"
@@ -34,7 +34,13 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins_list(self) -> List[str]:
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
+        origins = []
+        for origin in self.ALLOWED_ORIGINS.split(","):
+            cleaned = origin.strip().rstrip("/")
+            if cleaned:
+                origins.append(cleaned)
+                origins.append(f"{cleaned}/")
+        return origins
 
     class Config:
         env_file = ".env"
