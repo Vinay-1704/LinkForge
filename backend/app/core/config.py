@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
 
     # Database
-    DATABASE_URL: str = "sqlite:///./linkforge.db"
+    DATABASE_URL: str = "postgresql://postgres:Vinay%401704@localhost:5432/linkforge"
 
     # JWT
     SECRET_KEY: str = "change-this-secret-key-in-production-min-32-chars"
