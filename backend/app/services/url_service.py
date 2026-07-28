@@ -18,6 +18,10 @@ class URLService:
         self.url_repo = URLRepository(db)
         self.analytics_repo = AnalyticsRepository(db)
 
+    @property
+    def base_url(self) -> str:
+        return settings.BASE_URL.rstrip("/")
+
     def create_url(self, data: URLCreate, user: User) -> URLResponse:
         # Validate custom alias uniqueness
         if data.custom_alias:
@@ -40,7 +44,7 @@ class URLService:
         )
 
         # Auto-generate QR code
-        short_url = f"{settings.BASE_URL}/r/{url.effective_code}"
+        short_url = f"{self.base_url}/r/{url.effective_code}"
         try:
             qr_path = generate_qr_png(short_url, url.id)
             url = self.url_repo.update(url, qr_code_path=qr_path)
@@ -122,16 +126,16 @@ class URLService:
         url = self.url_repo.get_by_id(url_id)
         if not url or url.user_id != user.id:
             raise HTTPException(status_code=404, detail="URL not found")
-        short_url = f"{settings.BASE_URL}/r/{url.effective_code}"
+        short_url = f"{self.base_url}/r/{url.effective_code}"
         qr_path = generate_qr_png(short_url, url.id)
         return self._to_response(self.url_repo.update(url, qr_code_path=qr_path))
 
     def _to_response(self, url: URL) -> URLResponse:
         """Convert ORM URL object to a validated URLResponse Pydantic model."""
         effective_code = url.effective_code
-        short_url = f"{settings.BASE_URL}/r/{effective_code}"
+        short_url = f"{self.base_url}/r/{effective_code}"
         qr_code_url = (
-            f"{settings.BASE_URL}/static/qr/qr_{url.id}.png" if url.qr_code_path else None
+            f"{self.base_url}/static/qr/qr_{url.id}.png" if url.qr_code_path else None
         )
         return URLResponse(
             id=url.id,

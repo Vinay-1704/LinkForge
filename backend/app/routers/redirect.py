@@ -11,6 +11,7 @@ router = APIRouter(tags=["Redirect"])
 
 
 @router.get("/r/{short_code}")
+@router.get("//r/{short_code}")
 async def redirect_url(
     short_code: str,
     request: Request,
@@ -20,7 +21,7 @@ async def redirect_url(
     """
     Core redirect endpoint.
     Validates the short code, checks expiry/password, records analytics, then redirects.
-    Short URLs use the format: {BASE_URL}/r/{short_code}
+    Handles both single and double slash URLs cleanly.
     """
     url_service = URLService(db)
     analytics_service = AnalyticsService(db)

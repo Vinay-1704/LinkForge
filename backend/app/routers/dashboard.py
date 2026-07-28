@@ -14,6 +14,7 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 def _url_to_response(url, base_url: str) -> URLResponse:
     """Convert ORM URL to URLResponse without mutating the ORM object."""
+    base = base_url.rstrip("/")
     effective_code = url.effective_code
     return URLResponse(
         id=url.id,
@@ -21,7 +22,7 @@ def _url_to_response(url, base_url: str) -> URLResponse:
         original_url=url.original_url,
         short_code=url.short_code,
         custom_alias=url.custom_alias,
-        short_url=f"{base_url}/r/{effective_code}",
+        short_url=f"{base}/r/{effective_code}",
         description=url.description,
         category=url.category,
         tags=url.tags or [],
@@ -31,7 +32,7 @@ def _url_to_response(url, base_url: str) -> URLResponse:
         is_active=url.is_active,
         is_favorite=url.is_favorite,
         is_expired=url.is_expired,
-        qr_code_url=f"{base_url}/static/qr/qr_{url.id}.png" if url.qr_code_path else None,
+        qr_code_url=f"{base}/static/qr/qr_{url.id}.png" if url.qr_code_path else None,
         created_at=url.created_at,
         updated_at=url.updated_at,
     )
@@ -43,7 +44,7 @@ def get_dashboard(
     current_user: User = Depends(get_current_user),
 ):
     """Get the full dashboard data for the current user."""
-    base_url = settings.BASE_URL
+    base_url = settings.BASE_URL.rstrip("/")
     url_repo = URLRepository(db)
     analytics_repo = AnalyticsRepository(db)
 
