@@ -69,7 +69,7 @@ export default function LoginPage() {
                 <input
                   {...register('email', { required: 'Email is required' })}
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="vinay@gmail.com"
                   className="w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm outline-none transition-all focus:ring-2"
                   style={{
                     background: 'hsl(var(--input))',

@@ -82,14 +82,14 @@ export default function RegisterPage() {
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Field name="username" label="Username" icon={User} placeholder="johndoe"
+            <Field name="username" label="Username" icon={User} placeholder="vinay"
               rules={{
                 required: 'Username is required',
                 minLength: { value: 3, message: 'Min 3 characters' },
                 pattern: { value: /^[a-zA-Z0-9_]+$/, message: 'Letters, numbers, underscores only' },
               }} />
 
-            <Field name="email" label="Email" type="email" icon={Mail} placeholder="you@example.com"
+            <Field name="email" label="Email" type="email" icon={Mail} placeholder="vinay@gmail.com"
               rules={{ required: 'Email is required' }} />
 
             <div>

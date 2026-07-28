@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
                   <label className="block text-sm font-medium mb-1.5" style={{ color: 'hsl(var(--foreground))' }}>Email</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'hsl(var(--muted-foreground))' }} />
-                    <input {...register('email', { required: 'Email is required' })} type="email" placeholder="you@example.com"
+                    <input {...register('email', { required: 'Email is required' })} type="email" placeholder="vinay@gmail.com"
                       className="w-full pl-10 pr-4 py-2.5 rounded-lg border text-sm outline-none"
                       style={{ background: 'hsl(var(--input))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--foreground))' }} />
                   </div>
